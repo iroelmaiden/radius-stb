@@ -48,23 +48,13 @@ function db() {
     return $conn;
 }
 
-// Generate random voucher code
-function generateCode($length = 8) {
-    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    $code = '';
-    for ($i = 0; $i < $length; $i++) {
-        $code .= $chars[random_int(0, strlen($chars) - 1)];
-    }
-    return $code;
-}
-
 // Format currency
 function formatRupiah($amount) {
     return 'Rp ' . number_format($amount, 0, ',', '.');
 }
 
 // Flash messages
-function setFlash($message, $type = 'success') {
+function setFlash($type, $message) {
     $_SESSION['flash'] = ['message' => $message, 'type' => $type];
 }
 
@@ -77,5 +67,6 @@ function getFlash() {
     return null;
 }
 
+// Start session and load helpers
 session_start();
-?>
+require_once __DIR__ . '/includes/radius_helper.php';
