@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS hotspot_users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(64) NOT NULL UNIQUE,
+    password VARCHAR(128) NOT NULL,
+    nama_lengkap VARCHAR(100) DEFAULT NULL,
+    phone VARCHAR(20) DEFAULT NULL,
+    alamat TEXT DEFAULT NULL,
+    package_id INT DEFAULT NULL,
+    rate_limit VARCHAR(50) DEFAULT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    status ENUM('active','disabled') DEFAULT 'active',
+    comment TEXT DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

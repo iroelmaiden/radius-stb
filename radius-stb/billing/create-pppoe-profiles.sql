@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS pppoe_profiles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(64) NOT NULL,
+    rate_limit VARCHAR(64) DEFAULT NULL,
+    session_timeout INT DEFAULT NULL,
+    price DECIMAL(12,2) DEFAULT 0,
+    comment VARCHAR(100) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

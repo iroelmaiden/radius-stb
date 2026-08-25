@@ -1,0 +1,66 @@
+# ============================================
+# HOTSPOT BILLING - GITIGNORE
+# ============================================
+
+# --- Environment (CREDENTIALS) ---
+.env
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- Shell scripts dengan credential hardcoded ---
+install-radius.sh
+finish-install.sh
+add-nas.sh
+diag-db.sh
+run-install.sh
+run-install2.sh
+create-admin.sh
+billing/fix-clients.sh
+billing/fix-auth-pap.sh
+billing/setup-mikrotik.sh
+billing/setup-mikrotik2.sh
+billing/setup-mikrotik3.sh
+billing/setup-mikrotik4.sh
+billing/setup-mikrotik5.sh
+billing/setup-mikrotik6.sh
+billing/setup-mikrotik7.sh
+billing/setup-mikrotik8.sh
+billing/setup-mikrotik-final.sh
+billing/test-mt-conn.sh
+mikrotik-setup.rsc
+mtk-config.bat
+
+# --- Debug/test scripts ---
+billing/debug-*.sh
+billing/test-*.sh
+billing/check-*.sh
+billing/diag-*.sh
+billing/final-test.sh
+billing/full-test.sh
+billing/freeradius-debug.sh
+billing/output.html
+
+# --- Logs ---
+*.log
+
+# --- Temp ---
+tmp/
+temp/
+
+# --- Dependencies ---
+vendor/
+
+# --- Backup files ---
+*.bak
+*.sql.bak
+*~

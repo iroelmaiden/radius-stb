@@ -1,0 +1,6 @@
+# Daily reboot at 4:00 WIB (5:00 WITA)
+0 5 * * * /sbin/reboot
+* * * * * /usr/bin/php /var/www/html/billing/cron-expire.php >> /var/log/voucher-expire.log 2>&1
+* * * * * /usr/bin/php /var/www/html/billing/cron-stale.php >> /dev/null 2>&1
+* * * * * /usr/bin/php /var/www/html/billing/cron-pppoe-overdue.php >> /var/log/pppoe-overdue.log 2>&1
+0 6 1 * * /usr/bin/php /var/www/html/billing/cron-pppoe-billing.php >> /var/log/pppoe-billing.log 2>&1
