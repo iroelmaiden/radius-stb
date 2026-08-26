@@ -11,13 +11,13 @@ $vCount = ['available'=>0, 'sold'=>0, 'used'=>0, 'expired'=>0];
 foreach ($voucherStats as $vs) { $vCount[$vs['status']] = $vs['cnt']; }
 $vTotal = array_sum($vCount);
 
-// Today's usage (vouchers activated today)
+// Today's usage (vouchers activated today - including expired)
 $todayUsage = $conn->query("SELECT COUNT(*) as cnt, COALESCE(SUM(price),0) as revenue
-    FROM vouchers WHERE status IN ('used','sold') AND activated_at IS NOT NULL AND DATE(activated_at) = '$today'")->fetch_assoc();
+    FROM vouchers WHERE status IN ('used','sold','expired') AND activated_at IS NOT NULL AND DATE(activated_at) = '$today'")->fetch_assoc();
 
-// This month usage
+// This month usage (including expired)
 $monthUsage = $conn->query("SELECT COUNT(*) as cnt, COALESCE(SUM(price),0) as revenue
-    FROM vouchers WHERE status IN ('used','sold') AND activated_at IS NOT NULL AND DATE(activated_at) BETWEEN '$thisMonth-01' AND LAST_DAY(NOW())")->fetch_assoc();
+    FROM vouchers WHERE status IN ('used','sold','expired') AND activated_at IS NOT NULL AND DATE(activated_at) BETWEEN '$thisMonth-01' AND LAST_DAY(NOW())")->fetch_assoc();
 
 // PPPoE stats
 $pppoeStats = $conn->query("SELECT status, COUNT(*) as cnt FROM pppoe_users GROUP BY status")->fetch_all(MYSQLI_ASSOC);
@@ -34,12 +34,12 @@ foreach ($billThisMonth as $bs) { $bCount[$bs['status']] = $bs['cnt']; $bTotal[$
 // Active sessions
 $activeSessions = $conn->query("SELECT COUNT(*) as cnt FROM radacct WHERE acctstoptime IS NULL")->fetch_assoc()['cnt'];
 
-// Recent usage
+// Recent usage (including expired)
 $recentUsage = $conn->query("
     SELECT v.code, v.username, v.price, v.activated_at, p.name as package_name, v.status
     FROM vouchers v 
     JOIN voucher_packages p ON v.package_id = p.id
-    WHERE v.status IN ('used','sold') AND v.activated_at IS NOT NULL
+    WHERE v.status IN ('used','sold','expired') AND v.activated_at IS NOT NULL
     ORDER BY v.activated_at DESC LIMIT 8
 ")->fetch_all(MYSQLI_ASSOC);
 

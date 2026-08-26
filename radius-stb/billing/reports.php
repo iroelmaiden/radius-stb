@@ -16,34 +16,34 @@ $statsTrans = $conn->query("SELECT COUNT(*) as total, COALESCE(SUM(selling_price
     FROM transactions 
     WHERE DATE(created_at) BETWEEN '$date_from' AND '$date_to'")->fetch_assoc();
 
-// Revenue from used vouchers (auto count)
+// Revenue from used/expired vouchers (auto count - activated vouchers)
 $statsUsed = $conn->query("SELECT COUNT(*) as total, COALESCE(SUM(price),0) as revenue
     FROM vouchers
-    WHERE status IN ('used','sold')
+    WHERE status IN ('used','sold','expired')
     AND activated_at IS NOT NULL
     AND DATE(activated_at) BETWEEN '$date_from' AND '$date_to'")->fetch_assoc();
 
 $totalTrans = ($statsTrans['total'] ?? 0) + ($statsUsed['total'] ?? 0);
 $totalRevenue = ($statsTrans['revenue'] ?? 0) + ($statsUsed['revenue'] ?? 0);
 
-// Package breakdown (combine transactions + used vouchers)
+// Package breakdown (combine transactions + used/expired vouchers)
 $pkgStats = $conn->query("
     SELECT p.name, COUNT(v.id) as qty, COALESCE(SUM(v.price),0) as total 
     FROM vouchers v 
     JOIN voucher_packages p ON v.package_id = p.id
-    WHERE v.status IN ('used','sold')
+    WHERE v.status IN ('used','sold','expired')
     AND v.activated_at IS NOT NULL
     AND DATE(v.activated_at) BETWEEN '$date_from' AND '$date_to'
     GROUP BY p.name ORDER BY total DESC
 ")->fetch_all(MYSQLI_ASSOC);
 
-// Recent voucher usage
+// Recent voucher usage (including expired)
 $recentVouchers = $conn->query("
     SELECT v.id, v.code, v.username, v.price, v.selling_price, v.status, v.activated_at as sold_at, p.name as package_name,
            '-' as buyer_name
     FROM vouchers v 
     JOIN voucher_packages p ON v.package_id = p.id
-    WHERE v.status IN ('used','sold')
+    WHERE v.status IN ('used','sold','expired')
     AND v.activated_at IS NOT NULL
     AND DATE(v.activated_at) BETWEEN '$date_from' AND '$date_to'
     ORDER BY v.activated_at DESC
@@ -230,6 +230,8 @@ require_once 'includes/header.php';
                     <td>
                         <?php if (($t['status'] ?? '') === 'sold'): ?>
                             <span class="badge bg-info">Terjual</span>
+                        <?php elseif (($t['status'] ?? '') === 'expired'): ?>
+                            <span class="badge bg-danger">Expired</span>
                         <?php else: ?>
                             <span class="badge bg-success">Terpakai</span>
                         <?php endif; ?>
