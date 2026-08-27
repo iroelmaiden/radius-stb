@@ -103,24 +103,39 @@ function radiusDeleteUser($conn, $username) {
 /**
  * Generate a random code
  */
-function generateCustomCode($length = 8, $type = 'alphanumeric') {
+function generateCustomCode($length = 8, $type = 'alphanum_upper') {
     switch ($type) {
         case 'numeric':
+        case 'num':
             $chars = '0123456789';
             break;
+        case 'alpha_upper':
         case 'alpha':
             $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
             break;
+        case 'alpha_lower':
+            $chars = 'abcdefghjkmnpqrstuvwxyz';
+            break;
+        case 'alpha_mixed':
+            $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz';
+            break;
+        case 'alphanum_upper':
         case 'uppercase':
             $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
             break;
+        case 'alphanum_lower':
         case 'lowercase':
             $chars = 'abcdefghjkmnpqrstuvwxyz23456789';
             break;
+        case 'alphanum_mixed':
         case 'alphanumeric':
+            $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+            break;
+        case 'hex':
+            $chars = '0123456789ABCDEF';
+            break;
         default:
             $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            break;
     }
     $code = '';
     for ($i = 0; $i < $length; $i++) {
