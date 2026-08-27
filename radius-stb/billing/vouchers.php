@@ -81,6 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($rate_limit) {
                         radiusSetRateLimit($conn, $username, $rate_limit);
                     }
+                    $session_timeout = $time_limit_seconds ?: intval($pkgData['session_timeout'] ?? 0);
+                    if ($session_timeout > 0) {
+                        radiusSetSessionTimeout($conn, $username, $session_timeout);
+                    }
                     radiusSetGroup($conn, $username, 'hotspot');
                     $generated++;
                 }
