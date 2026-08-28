@@ -705,6 +705,10 @@ client mikrotik {
 }
 EOF
 
+# Enable SQL module
+ln -sf /etc/freeradius/3.0/mods-available/sql /etc/freeradius/3.0/mods-enabled/sql
+log "SQL module enabled"
+
 # Enable SQL in default site
 DEFAULT_SITE="/etc/freeradius/3.0/sites-enabled/default"
 if [[ -f "$DEFAULT_SITE" ]]; then
