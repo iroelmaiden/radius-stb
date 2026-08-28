@@ -403,24 +403,21 @@ CREATE TABLE IF NOT EXISTS `radgroupreply` (
 
 CREATE TABLE IF NOT EXISTS `radacct` (
   `radacctid` bigint(21) NOT NULL AUTO_INCREMENT,
-  `radacctsessionid` varchar(64) NOT NULL DEFAULT '',
-  `radacctuniqueid` varchar(32) NOT NULL DEFAULT '',
+  `acctsessionid` varchar(64) NOT NULL DEFAULT '',
+  `acctuniqueid` varchar(32) NOT NULL DEFAULT '',
   `acctsessiontime` int(12) unsigned DEFAULT NULL,
   `acctstarttime` datetime DEFAULT NULL,
   `acctstoptime` datetime DEFAULT NULL,
+  `acctupdatetime` datetime DEFAULT NULL,
+  `acctinterval` int(12) unsigned DEFAULT NULL,
+  `acctauthentic` varchar(32) DEFAULT NULL,
+  `connectinfo_start` varchar(50) DEFAULT NULL,
+  `connectinfo_stop` varchar(50) DEFAULT NULL,
   `acctinputoctets` bigint(20) DEFAULT NULL,
   `acctoutputoctets` bigint(20) DEFAULT NULL,
   `calledstationid` varchar(50) NOT NULL DEFAULT '',
   `callingstationid` varchar(50) NOT NULL DEFAULT '',
   `acctterminatecause` varchar(32) NOT NULL DEFAULT '',
-  `nasipaddress` varchar(15) NOT NULL DEFAULT '',
-  `nasportid` varchar(15) DEFAULT NULL,
-  `nasporttype` varchar(32) DEFAULT NULL,
-  `username` varchar(64) NOT NULL DEFAULT '',
-  `realm` varchar(64) DEFAULT '',
-  `acctauth` varchar(32) DEFAULT NULL,
-  `connectinfo_start` varchar(50) DEFAULT NULL,
-  `connectinfo_stop` varchar(50) DEFAULT NULL,
   `servicetype` varchar(32) DEFAULT NULL,
   `framedprotocol` varchar(32) DEFAULT NULL,
   `framedipaddress` varchar(15) NOT NULL DEFAULT '',
@@ -429,11 +426,17 @@ CREATE TABLE IF NOT EXISTS `radacct` (
   `framedinterfaceid` varchar(44) DEFAULT NULL,
   `framedprefixlen` tinyint(4) DEFAULT NULL,
   `class` varchar(64) DEFAULT NULL,
+  `delegatedipv6prefix` varchar(45) DEFAULT NULL,
+  `nasipaddress` varchar(15) NOT NULL DEFAULT '',
+  `nasportid` varchar(15) DEFAULT NULL,
+  `nasporttype` varchar(32) DEFAULT NULL,
+  `username` varchar(64) NOT NULL DEFAULT '',
+  `realm` varchar(64) DEFAULT '',
   `xascendvendorid` int(11) DEFAULT NULL,
   `xascendassignnasportid` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`radacctid`),
-  KEY `radacctsessionid` (`radacctsessionid`(32)),
-  KEY `radacctuniqueid` (`radacctuniqueid`(32)),
+  KEY `acctsessionid` (`acctsessionid`),
+  KEY `acctuniqueid` (`acctuniqueid`),
   KEY `acctstarttime` (`acctstarttime`),
   KEY `acctstoptime` (`acctstoptime`),
   KEY `nasipaddress` (`nasipaddress`)
@@ -482,6 +485,14 @@ fi
 # Insert localhost into nas table
 mysql -u root "$DB_NAME" <<EOSQL
 INSERT IGNORE INTO nas (nasname, shortname, type, secret) VALUES ('127.0.0.1', 'localhost', 'other', 'testing123');
+EOSQL
+
+# Add Acct-Interim-Interval for accounting to work
+mysql -u root "$DB_NAME" <<'EOSQL'
+INSERT IGNORE INTO radreply (username, attribute, op, value)
+SELECT username, 'Acct-Interim-Interval', ':=', '600'
+FROM radcheck
+WHERE username NOT IN (SELECT username FROM radreply WHERE attribute='Acct-Interim-Interval');
 EOSQL
 
 log "Custom tables created"
