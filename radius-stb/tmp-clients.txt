@@ -1,0 +1,7 @@
+client mikrotik-hotspot {
+	ipaddr = 172.16.2.1
+	secret = "M1kr0t1kS3cr3t"
+	shortname = mikrotik-hotspot
+	nas_type = other
+	require_message_authenticator = true
+}

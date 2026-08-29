@@ -25,6 +25,7 @@ function generateClientsConf($conn) {
         $conf .= "\tsecret = \"" . $c['secret'] . "\"\n";
         $conf .= "\tshortname = " . ($c['shortname'] ?: $name) . "\n";
         $conf .= "\tnas_type = " . ($c['type'] ?: 'other') . "\n";
+        $conf .= "\trequire_message_authenticator = true\n";
         $conf .= "}\n\n";
     }
 

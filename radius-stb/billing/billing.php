@@ -21,6 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ym = explode('-', $period);
         $dueDate = sprintf('%s-%s-%02d', $ym[0], $ym[1], $billing_date);
 
+        // Check if WA notification on billing is enabled
+        $notifyInvoice = $conn->query("SELECT setting_value FROM billing_settings WHERE setting_key='notify_invoice_issued'")->fetch_assoc();
+        $sendWA = ($notifyInvoice['setting_value'] ?? '0') === '1';
+
         foreach ($users as $u) {
             $exists = $conn->query("SELECT id FROM pppoe_billing WHERE user_id = {$u['id']} AND billing_period = '$period'");
             if ($exists->num_rows > 0) continue;
@@ -28,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $amount = floatval($u['price']);
             $conn->query("INSERT INTO pppoe_billing (user_id, billing_period, amount, due_date, status) VALUES ({$u['id']}, '$period', $amount, '$dueDate', 'unpaid')");
 
-            if (!empty($u['phone'])) {
+            if ($sendWA && !empty($u['phone'])) {
                 require_once 'includes/wa_helper.php';
                 waNotifyBilling($u, $amount, $period, date('d/m/Y', strtotime($dueDate)));
             }
@@ -47,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $method = $_POST['payment_method'] ?? 'cash';
         $notes = trim($_POST['notes'] ?? '');
 
-        $brow = $conn->query("SELECT b.*, p.username, p.nama_lengkap, p.phone FROM pppoe_billing b LEFT JOIN pppoe_users p ON b.user_id = p.id WHERE b.id = $billing_id");
+        $brow = $conn->query("SELECT b.*, p.username, p.nama_lengkap, p.phone, p.ip_address FROM pppoe_billing b LEFT JOIN pppoe_users p ON b.user_id = p.id WHERE b.id = $billing_id");
         if ($brow->num_rows === 0) {
             setFlash('Tagihan tidak ditemukan.', 'danger');
             header('Location: billing.php');
@@ -71,6 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $uname = $conn->real_escape_string($bdata['username']);
             $conn->query("DELETE FROM radusergroup WHERE username='$uname'");
             $conn->query("INSERT INTO radusergroup (username, groupname, priority) VALUES ('$uname', 'pppoe', 1)");
+
+            // Auto-release isolir: disconnect MikroTik + remove firewall
+            require_once 'includes/radius_helper.php';
+            mikrotikDisconnectPppoe($bdata['username']);
+            if ($bdata['ip_address'] ?? null) {
+                mikrotikRemoveIsolirAddress($bdata['ip_address']);
+            }
 
             if (!empty($bdata['phone'])) {
                 require_once 'includes/wa_helper.php';

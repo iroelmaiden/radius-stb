@@ -3,10 +3,23 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/wa_helper.php';
 $conn = db();
 
+function getCronSetting($conn, $key, $default = '') {
+    $stmt = $conn->prepare("SELECT setting_value FROM billing_settings WHERE setting_key = ?");
+    $stmt->bind_param('s', $key);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+    if ($row = $result->fetch_assoc()) {
+        return $row['setting_value'];
+    }
+    return $default;
+}
+
 echo "[" . date('Y-m-d H:i:s') . "] PPPoE Auto Billing Started\n";
 
 $currentMonth = date('Y-m');
-$billingDay = 1;
+$billingDay = intval(getCronSetting($conn, 'billing_day', '1'));
+$notifyInvoice = getCronSetting($conn, 'notify_invoice_issued', '0');
 
 $users = $conn->query("
     SELECT p.id, p.username, p.nama_lengkap, p.phone, p.billing_date, v.price, v.name AS package_name
@@ -26,7 +39,7 @@ foreach ($users as $u) {
 
     $conn->query("INSERT INTO pppoe_billing (user_id, billing_period, amount, due_date, status) VALUES ({$u['id']}, '$currentMonth', $amount, '$dueDate', 'unpaid')");
 
-    if ($u['phone']) {
+    if ($notifyInvoice === '1' && $u['phone']) {
         waNotifyBilling($u, $amount, $currentMonth, date('d/m/Y', strtotime($dueDate)));
     }
 

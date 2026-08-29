@@ -10,6 +10,80 @@
         overlay.classList.toggle('show');
     }
 
+    function toggleSidebarMinimize() {
+        var sidebar = document.getElementById('sidebar');
+        var wrapper = document.querySelector('.content-wrapper');
+        var icon = document.getElementById('minimizeIcon');
+        
+        if (window.innerWidth <= 768) {
+            toggleSidebar();
+            return;
+        }
+        
+        sidebar.classList.toggle('collapsed');
+        wrapper.classList.toggle('expanded');
+        
+        if (sidebar.classList.contains('collapsed')) {
+            icon.classList.remove('fa-chevron-left');
+            icon.classList.add('fa-chevron-right');
+            localStorage.setItem('sidebarCollapsed', '1');
+        } else {
+            icon.classList.remove('fa-chevron-right');
+            icon.classList.add('fa-chevron-left');
+            localStorage.setItem('sidebarCollapsed', '0');
+        }
+    }
+
+    function toggleMenuGroup(header) {
+        if (document.getElementById('sidebar').classList.contains('collapsed')) return;
+        
+        var items = header.nextElementSibling;
+        var icon = header.querySelector('.toggle-icon');
+        
+        header.classList.toggle('collapsed');
+        items.classList.toggle('collapsed');
+        
+        if (items.classList.contains('collapsed')) {
+            items.style.maxHeight = '0';
+        } else {
+            items.style.maxHeight = items.scrollHeight + 'px';
+        }
+    }
+
+    // Restore sidebar state
+    (function() {
+        var collapsed = localStorage.getItem('sidebarCollapsed');
+        var sidebar = document.getElementById('sidebar');
+        var wrapper = document.querySelector('.content-wrapper');
+        var icon = document.getElementById('minimizeIcon');
+        
+        if (collapsed === '1' && window.innerWidth > 768) {
+            sidebar.classList.add('collapsed');
+            wrapper.classList.add('expanded');
+            icon.classList.remove('fa-chevron-left');
+            icon.classList.add('fa-chevron-right');
+        }
+        
+        // Set menu-items max-height
+        document.querySelectorAll('.menu-items').forEach(function(el) {
+            el.style.maxHeight = el.scrollHeight + 'px';
+        });
+        
+        // Collapse inactive menus
+        document.querySelectorAll('.menu-group').forEach(function(group) {
+            var activeLink = group.querySelector('a.active');
+            if (!activeLink) {
+                var header = group.querySelector('.menu-header');
+                var items = group.querySelector('.menu-items');
+                if (header && items) {
+                    header.classList.add('collapsed');
+                    items.classList.add('collapsed');
+                    items.style.maxHeight = '0';
+                }
+            }
+        });
+    })();
+
     function confirmDelete(msg) {
         return confirm(msg || 'Yakin ingin menghapus?');
     }

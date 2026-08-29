@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->query("INSERT INTO radcheck (username, attribute, op, value) VALUES ('$escU', 'Framed-Protocol', ':=', 'PPP')");
 
         if ($ip_address) {
-            $conn->query("INSERT INTO radcheck (username, attribute, op, value) VALUES ('$escU', 'Framed-IP-Address', ':=', '$escIP')");
+            $conn->query("INSERT INTO radreply (username, attribute, op, value) VALUES ('$escU', 'Framed-IP-Address', ':=', '$escIP')");
         }
 
         if ($package_id > 0) {
@@ -116,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->query("INSERT INTO radcheck (username, attribute, op, value) VALUES ('$escU', 'Framed-Protocol', ':=', 'PPP')");
 
         if ($ip_address) {
-            $conn->query("INSERT INTO radcheck (username, attribute, op, value) VALUES ('$escU', 'Framed-IP-Address', ':=', '$escIP')");
+            $conn->query("INSERT INTO radreply (username, attribute, op, value) VALUES ('$escU', 'Framed-IP-Address', ':=', '$escIP')");
         }
 
         if ($package_id > 0) {
@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($pData['ip_address']) {
                     $escIP = $conn->real_escape_string($pData['ip_address']);
-                    $conn->query("INSERT INTO radcheck (username, attribute, op, value) VALUES ('$escU', 'Framed-IP-Address', ':=', '$escIP')");
+                    $conn->query("INSERT INTO radreply (username, attribute, op, value) VALUES ('$escU', 'Framed-IP-Address', ':=', '$escIP')");
                 }
 
                 if ($pData['package_id'] > 0) {
@@ -202,21 +202,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'isolir') {
         $id = intval($_POST['id'] ?? 0);
+        require_once 'includes/radius_helper.php';
         $row = $conn->query("SELECT username, isolir_status FROM pppoe_users WHERE id = $id");
         if ($row->num_rows > 0) {
             $d = $row->fetch_assoc();
             $uname = $conn->real_escape_string($d['username']);
 
             if ($d['isolir_status'] === 'active') {
-                $conn->query("UPDATE pppoe_users SET isolir_status='isolir', isolir_date=NOW() WHERE id=$id");
-                $conn->query("DELETE FROM radusergroup WHERE username='$uname'");
-                $conn->query("INSERT INTO radusergroup (username, groupname, priority) VALUES ('$uname', 'pppoe-isolir', 1)");
-                setFlash("User '$uname' berhasil diISOLIR.", 'warning');
+                $result = isolirApply($conn, $id);
+                setFlash($result['msg'], $result['ok'] ? 'warning' : 'danger');
             } else {
-                $conn->query("UPDATE pppoe_users SET isolir_status='active', isolir_date=NULL WHERE id=$id");
-                $conn->query("DELETE FROM radusergroup WHERE username='$uname'");
-                $conn->query("INSERT INTO radusergroup (username, groupname, priority) VALUES ('$uname', 'pppoe', 1)");
-                setFlash("User '$uname' berhasil diaktifkan dari isolir.", 'success');
+                $result = isolirRelease($conn, $id);
+                setFlash($result['msg'], $result['ok'] ? 'success' : 'danger');
             }
         }
         header('Location: pppoe.php');
