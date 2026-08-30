@@ -7,11 +7,11 @@ $count = 0;
 $validity_count = 0;
 $delete_count = 0;
 
-// 1. Bersihkan stale session (>60s tanpa update)
+// 1. Bersihkan stale session (>180s tanpa update - MikroTik interim accounting)
 $conn->query("
     UPDATE radacct SET acctstoptime=NOW(), acctterminatecause='Stale-Session'
     WHERE acctstoptime IS NULL
-    AND UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(acctupdatetime) > 60
+    AND UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(acctupdatetime) > 180
 ");
 $stale_count = $conn->affected_rows;
 

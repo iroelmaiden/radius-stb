@@ -236,7 +236,7 @@ if ($filter_package > 0) {
     $params[] = $filter_package;
     $paramTypes .= 'i';
 }
-if ($filter_status && in_array($filter_status, ['available', 'used', 'expired'])) {
+if ($filter_status && in_array($filter_status, ['available', 'sold', 'used', 'expired'])) {
     $whereConditions[] = "v.status = ?";
     $params[] = $filter_status;
     $paramTypes .= 's';
@@ -293,8 +293,28 @@ $stmt->execute();
 $available = $stmt->get_result()->fetch_assoc()['cnt'];
 $stmt->close();
 
-$groupsQ = $conn->query("SELECT DATE(v.created_at) as dg, COUNT(*) as cnt FROM vouchers v $whereSQL GROUP BY DATE(v.created_at) ORDER BY dg DESC");
+$groupsQ = $conn->prepare("SELECT DATE(v.created_at) as dg, COUNT(*) as cnt FROM vouchers v $whereSQL GROUP BY DATE(v.created_at) ORDER BY dg DESC");
+if ($paramTypes) $groupsQ->bind_param($paramTypes, ...$params);
+$groupsQ->execute();
+$groupsResult = $groupsQ->get_result();
+// Don't close yet - will be consumed in the HTML loop below
 $packages = $conn->query("SELECT * FROM voucher_packages ORDER BY name")->fetch_all(MYSQLI_ASSOC);
+
+// Build plain WHERE for per-group queries (no placeholders)
+$plainWhere = '';
+$plainParams = [];
+if ($filter_package > 0) $plainWhere .= " AND v.package_id = " . intval($filter_package);
+if ($filter_status && in_array($filter_status, ['available', 'sold', 'used', 'expired'])) $plainWhere .= " AND v.status = '" . $conn->real_escape_string($filter_status) . "'";
+if ($filter_date_from) $plainWhere .= " AND DATE(v.created_at) >= '" . $conn->real_escape_string($filter_date_from) . "'";
+if ($filter_date_to) $plainWhere .= " AND DATE(v.created_at) <= '" . $conn->real_escape_string($filter_date_to) . "'";
+if ($filter_search) {
+    $s = $conn->real_escape_string($filter_search);
+    $plainWhere .= " AND (v.code LIKE '%$s%' OR v.username LIKE '%$s%')";
+}
+if ($filter_comment) {
+    $c = $conn->real_escape_string($filter_comment);
+    $plainWhere .= " AND v.comment LIKE '%$c%'";
+}
 
 $flash = getFlash();
 require_once 'includes/header.php';
@@ -393,6 +413,7 @@ require_once 'includes/header.php';
                     <select name="status" class="form-select form-select-sm">
                         <option value="">All Status</option>
                         <option value="available" <?= $filter_status === 'available' ? 'selected' : '' ?>>Available</option>
+                        <option value="sold" <?= $filter_status === 'sold' ? 'selected' : '' ?>>Sold</option>
                         <option value="used" <?= $filter_status === 'used' ? 'selected' : '' ?>>Used</option>
                         <option value="expired" <?= $filter_status === 'expired' ? 'selected' : '' ?>>Expired</option>
                     </select>
@@ -463,14 +484,14 @@ require_once 'includes/header.php';
                     <tbody>
                         <?php
                         $groupIdx = 0;
-                        $groupsQ->data_seek(0);
-                        while ($group = $groupsQ->fetch_assoc()) {
+                        $groupsResult->data_seek(0);
+                        while ($group = $groupsResult->fetch_assoc()) {
                             $dg = $group['dg'];
                             $cnt = $group['cnt'];
                             $gid = 'group_' . $groupIdx++;
                             $dateStr = date('d M Y', strtotime($dg));
 
-                            $vQ = $conn->query("SELECT v.*, p.name as package_name FROM vouchers v LEFT JOIN voucher_packages p ON v.package_id = p.id WHERE DATE(v.created_at) = '$dg' " . ($whereSQL ? str_replace('WHERE', 'AND', $whereSQL) : '') . " ORDER BY v.created_at DESC");
+                            $vQ = $conn->query("SELECT v.*, p.name as package_name FROM vouchers v LEFT JOIN voucher_packages p ON v.package_id = p.id WHERE DATE(v.created_at) = '$dg' $plainWhere ORDER BY v.created_at DESC");
                         ?>
                         <tr class="group-header table-secondary" onclick="toggleGroup('<?= $gid ?>')">
                             <td colspan="12">
@@ -526,7 +547,7 @@ require_once 'includes/header.php';
                             </td>
                         </tr>
                         <?php endwhile; ?>
-                        <?php } ?>
+                        <?php } $groupsQ->close(); ?>
                     </tbody>
                 </table>
             </div>
